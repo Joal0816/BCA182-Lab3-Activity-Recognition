@@ -1,0 +1,8 @@
+node_modules/
+.venv/
+dist/
+.pio/
+*.log
+.DS_Store
+include/secrets.h
+cloud/ml/run_or_walk.csv

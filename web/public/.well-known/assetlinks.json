@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "tech.joalvergs.kinesis",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:7F:0E:52:D7:11:86:EC:F9:6B:9E:C1:4F:04:32:B3:A3:4E:91:D4:53:43:5A:42:AC:7E:32:15:5A:FE"
+      ]
+    }
+  }
+]

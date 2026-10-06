@@ -1,0 +1,15 @@
+# CMSIS-Toolbox Solution Configuration for RT-Spark Lab 3
+solution:
+  compiler: AC6
+  define:
+    - MQTT_DO_NOT_USE_CUSTOM_CONFIG
+  packs:
+    - pack: ARM::CMSIS-Driver
+    - pack: AWS::coreMQTT
+  components:
+    - component: CMSIS Driver:SPI
+    - component: CMSIS Driver:WiFi:ISM43362
+    - component: FreeRTOS:coreMQTT
+    - component: Network:Core
+    - component: Network:Interface:Wi-Fi
+    - component: Network:Socket:UDP

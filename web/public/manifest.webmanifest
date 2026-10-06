@@ -1,0 +1,24 @@
+{
+  "name": "Kinesis - RT-Spark Activity Recognition",
+  "short_name": "Kinesis",
+  "description": "Real-time human activity recognition dashboard for RT-Spark STM32 IoT telemetry",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
