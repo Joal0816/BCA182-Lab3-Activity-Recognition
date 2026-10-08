@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { classifyWindow } from "../lib/model.ts";
-import { supabase } from "../lib/db.ts";
+import { classifyWindow } from "../lib/model.js";
+import { supabase } from "../lib/db.js";
 
 async function getRawBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {

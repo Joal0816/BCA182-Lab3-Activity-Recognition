@@ -1,11 +1,5 @@
 import { Sample, extractFeatures } from "./features.js";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const modelJsonPath = path.resolve(__dirname, "./model.json");
-const modelData = JSON.parse(fs.readFileSync(modelJsonPath, "utf-8"));
+import modelData from "./model.json" with { type: "json" };
 
 export interface PredictionResult {
   activity: "walk" | "run";

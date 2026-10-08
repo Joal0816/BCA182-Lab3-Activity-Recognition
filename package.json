@@ -4,5 +4,9 @@
   "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2"
   }
 }
