@@ -2,6 +2,9 @@
   "name": "kinesis-serverless",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "build": "cd web && npm install && npm run build"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1"
   },
