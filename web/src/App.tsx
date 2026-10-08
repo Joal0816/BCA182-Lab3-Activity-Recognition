@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, Footprints, Zap, History, Radio, Cpu, Layers, Smartphone, Sparkles } from 'lucide-react';
+import { Activity, Footprints, Zap, History, Radio, Cpu, Layers, Smartphone, Sparkles, Moon } from 'lucide-react';
 
 interface Prediction {
   device_id: string;
   ts: string;
-  activity: 'walk' | 'run';
+  activity: 'idle' | 'walk' | 'run';
   confidence: number;
+  prob_idle?: number;
   prob_walk: number;
   prob_run: number;
   model_version: string;
@@ -25,11 +26,12 @@ export function App() {
   const [latest, setLatest] = useState<Prediction>({
     device_id: 'rt-spark-01',
     ts: new Date().toISOString(),
-    activity: 'walk',
-    confidence: 0.9982,
-    prob_walk: 0.9982,
-    prob_run: 0.0018,
-    model_version: 'logreg-v1-rtspark'
+    activity: 'idle',
+    confidence: 0.995,
+    prob_idle: 0.995,
+    prob_walk: 0.003,
+    prob_run: 0.002,
+    model_version: 'logreg-v2-tri-activity'
   });
 
   const [history, setHistory] = useState<Prediction[]>([]);
@@ -110,6 +112,7 @@ export function App() {
                 ts: new Date().toISOString(),
                 activity: data.prediction.activity,
                 confidence: data.prediction.confidence,
+                prob_idle: data.prediction.prob_idle ?? 0,
                 prob_walk: data.prediction.prob_walk,
                 prob_run: data.prediction.prob_run,
                 model_version: data.prediction.model_version,
@@ -149,6 +152,31 @@ export function App() {
     return () => clearInterval(interval);
   }, [phoneTracking]);
 
+  const getActivityStyle = (activity: 'idle' | 'walk' | 'run') => {
+    switch (activity) {
+      case 'idle':
+        return {
+          card: 'bg-indigo-500/10 border-2 border-indigo-500/40 text-indigo-400 shadow-xl shadow-indigo-500/10',
+          dot: 'bg-indigo-400',
+          icon: <Moon className="w-16 h-16 animate-pulse" />
+        };
+      case 'walk':
+        return {
+          card: 'bg-emerald-500/10 border-2 border-emerald-500/40 text-emerald-400 shadow-xl shadow-emerald-500/10',
+          dot: 'bg-emerald-400',
+          icon: <Footprints className="w-16 h-16 animate-pulse" />
+        };
+      case 'run':
+        return {
+          card: 'bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 shadow-xl shadow-amber-500/10',
+          dot: 'bg-amber-400',
+          icon: <Zap className="w-16 h-16 animate-bounce" />
+        };
+    }
+  };
+
+  const currentStyle = getActivityStyle(latest.activity);
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-black">
       {/* Top Navbar */}
@@ -161,7 +189,7 @@ export function App() {
             <h1 className="text-base font-semibold tracking-tight text-white flex items-center gap-2">
               Kinesis OS
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/50">
-                v1.0.0
+                v1.1.0
               </span>
             </h1>
             <p className="text-xs text-zinc-400 font-mono">BCA 182 — Real-Time IoT Activity Recognition</p>
@@ -214,17 +242,9 @@ export function App() {
 
             <div className="flex flex-col sm:flex-row items-center gap-8 my-6">
               <div
-                className={`w-32 h-32 rounded-3xl flex items-center justify-center transition-all duration-500 ${
-                  latest.activity === 'run'
-                    ? 'bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 shadow-xl shadow-amber-500/10'
-                    : 'bg-emerald-500/10 border-2 border-emerald-500/40 text-emerald-400 shadow-xl shadow-emerald-500/10'
-                }`}
+                className={`w-32 h-32 rounded-3xl flex items-center justify-center transition-all duration-500 ${currentStyle.card}`}
               >
-                {latest.activity === 'run' ? (
-                  <Zap className="w-16 h-16 animate-bounce" />
-                ) : (
-                  <Footprints className="w-16 h-16 animate-pulse" />
-                )}
+                {currentStyle.icon}
               </div>
 
               <div className="space-y-2 text-center sm:text-left">
@@ -261,7 +281,20 @@ export function App() {
             )}
 
             {/* Posterior Probability Bars */}
-            <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-zinc-800/60 font-mono">
+            <div className="grid grid-cols-3 gap-3 mt-6 pt-6 border-t border-zinc-800/60 font-mono">
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs text-zinc-400">
+                  <span>P(IDLE)</span>
+                  <span className="text-zinc-200">{((latest.prob_idle ?? 0) * 100).toFixed(1)}%</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-500 transition-all duration-300 rounded-full"
+                    style={{ width: `${(latest.prob_idle ?? 0) * 100}%` }}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs text-zinc-400">
                   <span>P(WALK)</span>
@@ -313,7 +346,7 @@ export function App() {
                 <Layers className="w-3.5 h-3.5" /> INGESTION
               </div>
               <div className="text-sm font-medium text-zinc-200">Vercel + Supabase</div>
-              <div className="text-xs text-zinc-500 font-mono mt-0.5">Windowed LR (99.98% Acc)</div>
+              <div className="text-xs text-zinc-500 font-mono mt-0.5">Windowed LR (Idle/Walk/Run)</div>
             </div>
           </div>
         </section>
@@ -336,7 +369,11 @@ export function App() {
                 <div className="flex items-center gap-2.5">
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      item.activity === 'run' ? 'bg-amber-400' : 'bg-emerald-400'
+                      item.activity === 'idle'
+                        ? 'bg-indigo-400'
+                        : item.activity === 'run'
+                        ? 'bg-amber-400'
+                        : 'bg-emerald-400'
                     }`}
                   />
                   <span className="font-semibold uppercase text-zinc-200">{item.activity}</span>

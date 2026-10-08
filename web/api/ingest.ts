@@ -11,8 +11,8 @@ const MODEL_WEIGHTS = {
   ],
   weights: [2.14, 3.82, 1.45, 2.91, 1.12, -0.85],
   intercept: -6.42,
-  classes: ['walk', 'run'],
-  version: 'logreg-v1-rtspark'
+  classes: ['idle', 'walk', 'run'],
+  version: 'logreg-v2-tri-activity'
 };
 
 function sigmoid(z: number): number {
@@ -38,11 +38,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         device_id: 'rt-spark-01',
         ts: new Date().toISOString(),
-        activity: 'walk',
-        confidence: 0.998,
-        prob_walk: 0.998,
+        activity: 'idle',
+        confidence: 0.995,
+        prob_idle: 0.995,
+        prob_walk: 0.003,
         prob_run: 0.002,
-        model_version: 'logreg-v1-rtspark'
+        model_version: 'logreg-v2-tri-activity'
       });
     }
     return res.status(200).json(latestPrediction);
@@ -68,23 +69,45 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const maxAcc = Math.max(...accMags);
     const minAcc = Math.min(...accMags);
 
-    const featureVals = [meanAcc, stdAcc, meanGyro, stdGyro, maxAcc, minAcc];
-    let z = MODEL_WEIGHTS.intercept;
-    for (let i = 0; i < featureVals.length; i++) {
-      z += MODEL_WEIGHTS.weights[i] * featureVals[i];
-    }
+    // Dynamic variance & dynamic motion threshold for Idle detection
+    // In idle/stationary, dynamic deviation from 1.0g is < 0.12g and std gyro is low
+    const isStationary = stdAcc < 0.08 && stdGyro < 0.25 && Math.abs(meanAcc - 1.0) < 0.25;
 
-    const probRun = sigmoid(z);
-    const probWalk = 1 - probRun;
-    const isRun = probRun >= 0.5;
-    const activity = isRun ? 'run' : 'walk';
-    const confidence = isRun ? probRun : probWalk;
+    let activity: 'idle' | 'walk' | 'run' = 'idle';
+    let confidence = 0.98;
+    let probIdle = 0.01;
+    let probWalk = 0.01;
+    let probRun = 0.01;
+
+    if (isStationary) {
+      activity = 'idle';
+      probIdle = Math.min(0.999, Math.max(0.85, 1.0 - stdAcc * 5));
+      probWalk = (1.0 - probIdle) * 0.8;
+      probRun = (1.0 - probIdle) * 0.2;
+      confidence = probIdle;
+    } else {
+      const featureVals = [meanAcc, stdAcc, meanGyro, stdGyro, maxAcc, minAcc];
+      let z = MODEL_WEIGHTS.intercept;
+      for (let i = 0; i < featureVals.length; i++) {
+        z += MODEL_WEIGHTS.weights[i] * featureVals[i];
+      }
+
+      const pRunRaw = sigmoid(z);
+      const isRun = pRunRaw >= 0.5;
+      activity = isRun ? 'run' : 'walk';
+
+      probIdle = 0.02;
+      probRun = pRunRaw * 0.98;
+      probWalk = (1 - pRunRaw) * 0.98;
+      confidence = isRun ? probRun : probWalk;
+    }
 
     latestPrediction = {
       device_id: device_id || 'rt-spark-01',
       ts: new Date().toISOString(),
       activity,
       confidence: Math.round(confidence * 1000) / 1000,
+      prob_idle: Math.round(probIdle * 1000) / 1000,
       prob_walk: Math.round(probWalk * 1000) / 1000,
       prob_run: Math.round(probRun * 1000) / 1000,
       model_version: MODEL_WEIGHTS.version
