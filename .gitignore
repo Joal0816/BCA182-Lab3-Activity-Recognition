@@ -6,3 +6,5 @@ dist/
 .DS_Store
 include/secrets.h
 cloud/ml/run_or_walk.csv
+.vercel
+.env*
